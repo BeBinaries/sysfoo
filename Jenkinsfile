@@ -28,16 +28,31 @@ pipeline {
     }
 
     stage('package') {
-      agent {
-        docker {
-          image 'maven:3.9.6-eclipse-temurin-17'
+      parallel {
+        stage('package') {
+          agent {
+            docker {
+              image 'maven:3.9.6-eclipse-temurin-17'
+            }
+
+          }
+          steps {
+            echo 'package maven app'
+            sh 'mvn package -DskipTests'
+            archiveArtifacts 'target/*.jar'
+          }
         }
 
-      }
-      steps {
-        echo 'package maven app'
-        sh 'mvn package -DskipTests'
-        archiveArtifacts 'target/*.jar'
+        stage('DOCKER BUILD') {
+          steps {
+            script {
+              def commitHash = env.GIT_COMMIT.take(7)
+              def dockerImage = docker.build("xxxxxx/sysfoo:${commitHash}", "./")
+            }
+
+          }
+        }
+
       }
     }
 
